@@ -1,0 +1,1331 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniqTrip · Costa do Descobrimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+  --green: #1B5E3A;
+  --green-light: #EAF3EF;
+  --gold: #C5A059;
+  --gold-light: #d4b07a;
+  --green-bg: #EAF3EF;
+  --bg: #F7FAF9;
+  --card-bg: #FFFFFF;
+  --text: #1a1a1a;
+  --text-light: #6b7280;
+  --border: #e5e7eb;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 0.02em;
+}
+.container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+.header {
+  background: #fff;
+  color: var(--text);
+  padding: 28px 0 24px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid var(--green-bg);
+}
+.header .logo {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+
+.header h1 {
+  color: var(--green);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  margin-bottom: 4px;
+}
+.header .subtitulo {
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  color: var(--text-light);
+  font-weight: 300;
+  margin-bottom: 20px;
+}
+.header .destinos-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 4px;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+.header .destinos-header .seta {
+  color: var(--gold);
+  margin: 0 4px;
+  font-size: 0.75rem;
+}
+.header .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.header .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.header .tag i { color: var(--gold); font-size: 0.7rem; }
+.header .tag .badge {
+  background: var(--gold);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-weight: 700;
+  font-size: 0.7rem;
+  margin-left: 4px;
+}
+
+/* Mapa */
+#mapa {
+  height: 520px;
+  width: 100%;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hover);
+  z-index: 1;
+  position: relative;
+  border: 2px solid #fff;
+}
+.map-wrapper { padding: 0 24px; }
+
+/* Marcadores personalizados */
+.marker-number {
+  background: none;
+  border: none;
+}
+.marker-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+.marker-circle:hover { transform: scale(1.12); }
+
+.marker-circle.marker-origem {
+  background: #6b7280;
+  border-color: var(--gold);
+  font-size: 0.7rem;
+}
+.marker-circle.end {
+  background: var(--gold);
+  border-color: var(--green);
+}
+
+/* Seções */
+section { padding: 40px 0; }
+.section-title {
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-title i {
+  color: var(--gold);
+  font-size: 1.1rem;
+  width: 28px;
+  text-align: center;
+}
+
+/* Cards */
+.cards-grid {
+  display: grid;
+  gap: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.card:hover { box-shadow: var(--shadow-hover); }
+.card-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 16px;
+  padding: 20px 24px;
+  align-items: center;
+  cursor: pointer;
+}
+.card-expand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  color: var(--gold);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.card-expand i {
+  transition: transform 0.3s;
+  font-size: 0.8rem;
+}
+.card-body.open ~ .card-header .card-expand i {
+  transform: rotate(180deg);
+}
+.card-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+}
+.card-highlights span {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.card-numero {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.card-cidade h3 {
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+.card-cidade .noites {
+.card-cidade .highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+}
+.card-cidade .highlights span {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.card-body.open ~ .card-header [style*="chevron-down"] i,
+.card-body.open + .card-header [style*="chevron-down"] i {
+  transform: rotate(180deg);
+}
+  font-size: 0.82rem;
+  color: var(--text-light);
+}
+.card-transporte {
+  text-align: right;
+  flex-shrink: 0;
+}
+.card-transporte .transporte-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+.card-transporte .transporte-icon i {
+  color: var(--gold);
+  font-size: 0.85rem;
+}
+.card-transporte .destino-label {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+/* Card expandido */
+.card-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+  padding: 0 24px;
+}
+.card-body.open {
+  max-height: 800px;
+  padding: 0 24px 24px;
+}
+.card-body .grid-detalhes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+.card-body .detalhe-item { font-size: 0.88rem; }
+.card-body .detalhe-item h4 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+.card-body .detalhe-item h4 i {
+  color: var(--gold);
+  margin-right: 6px;
+  width: 16px;
+}
+.card-body .detalhe-item ul {
+  list-style: none;
+  padding: 0;
+}
+.card-body .detalhe-item li {
+  padding: 3px 0;
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.card-body .detalhe-item li::before {
+  content: '-';
+  color: var(--gold);
+  margin-right: 8px;
+  opacity: 0.6;
+}
+.card-body .detalhe-item .destaque {
+  font-weight: 600;
+  color: var(--green);
+}
+.btn-expand {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--gold);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.btn-expand:hover { color: var(--green); }
+.btn-expand i { transition: transform 0.3s; }
+.btn-expand.rotated i { transform: rotate(180deg); }
+
+/* Transportes */
+.transportes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.transporte-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.transporte-card .icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.transporte-card .icon-wrap i { font-size: 1.2rem; color: var(--green); }
+.transporte-card h4 { font-size: 0.95rem; margin-bottom: 4px; }
+.transporte-card p { font-size: 0.82rem; color: var(--text-light); line-height: 1.5; }
+.transporte-card .dica {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(197,160,89,0.08);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+/* Observações */
+.obs-grid {
+  display: grid;
+  gap: 12px;
+}
+.obs-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.obs-item i {
+  color: var(--gold);
+  font-size: 1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.obs-item p { font-size: 0.88rem; color: var(--text-light); line-height: 1.5; }
+.obs-item strong { color: var(--text); }
+
+/* Footer temático */
+.footer-tematico {
+  background: var(--green-bg);
+  border-top: 2px solid var(--green);
+  padding: 32px 0;
+  margin-top: 20px;
+}
+
+
+
+
+/* Botão print */
+.btn-print {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 30px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(11,59,36,0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+  transition: all 0.3s;
+}
+.btn-print i { color: var(--gold); }
+.btn-print:hover {
+  background: var(--green-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(11,59,36,0.4);
+}
+
+/* Distâncias tabela compacta */
+.tabela-distancias {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.tabela-distancias th {
+  background: var(--green);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tabela-distancias td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tabela-distancias tr:nth-child(even) td { background: var(--bg); }
+.tabela-distancias tr:last-child td { border-bottom: none; }
+.tabela-distancias .total-row td {
+  background: rgba(197,160,89,0.1);
+  font-weight: 600;
+  border-top: 2px solid var(--gold);
+}
+
+/* Responsivo */
+@media (min-width: 768px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .card-body .grid-detalhes { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 767px) {
+  .card-header { grid-template-columns: auto 1fr; gap: 12px; }
+  .card-transporte { grid-column: 1 / -1; text-align: left; }
+  .card-body .grid-detalhes { grid-template-columns: 1fr; }
+  .transportes-grid { grid-template-columns: 1fr; }
+  #mapa { height: 360px; }
+  .header { padding: 28px 0 24px; }
+  /* .footer-tematico .grid { */ gap: 20px; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+  .btn-print { display: none; }
+  #mapa { height: 300px; border-radius: var(--radius-sm); }
+}
+
+/* Print */
+@media print {
+  .btn-print { display: none; }
+  .header { background: #fff !important; -webkit-print-color-adjust: exact; }
+  .marker-circle, .card-numero, .tabela-distancias th, .footer-tematico { -webkit-print-color-adjust: exact; }
+  #mapa { height: 200px; page-break-inside: avoid; }
+  .card { break-inside: avoid; }
+  .card-body.open { max-height: none !important; }
+  .btn-expand { display: none; }
+  .footer-tematico .item i { -webkit-print-color-adjust: exact; }
+}
+
+/* Cronograma */
+.cronograma-dia {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.cronograma-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--green-bg);
+  border-bottom: 1px solid var(--border);
+}
+.cronograma-dia-label {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--green);
+}
+.cronograma-cidade {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+.cronograma-cidade i { margin-right: 4px; }
+.cronograma-body { padding: 4px 0; }
+.cronograma-row {
+  display: flex;
+  gap: 16px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.cronograma-row:last-child { border-bottom: none; }
+.cronograma-hora {
+  flex-shrink: 0;
+  width: 56px;
+  font-weight: 600;
+  color: var(--green);
+  font-family: 'Inter', monospace;
+  font-size: 0.8rem;
+}
+.cronograma-atividade { color: var(--text); }
+
+/* Orçamento */
+.tabela-orcamento {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.tabela-orcamento th {
+  background: var(--green);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tabela-orcamento td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.tabela-orcamento tr:nth-child(even) td { background: var(--green-bg); }
+.tabela-orcamento tr:last-child td { border-bottom: none; }
+.tabela-orcamento .total-row td {
+  background: rgba(197,160,89,0.12);
+  font-weight: 700;
+  border-top: 2px solid var(--gold);
+  color: var(--green);
+}
+
+/* Print - expand cronograma */
+@media print {
+  .cronograma-row { break-inside: avoid; }
+  .cronograma-dia { break-inside: avoid; }
+}
+
+/* Badges */
+.badge-base {
+  display: inline-block;
+  background: var(--gold);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.05em;
+}
+.base-fixa {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--gold);
+  font-weight: 500;
+  margin-left: 8px;
+}
+@media (max-width: 767px) {
+  .base-fixa { display: block; margin-left: 0; margin-top: 2px; }
+}
+
+/* Footer company info */
+.footer-tematico {
+  text-align: center;
+}
+.footer-tematico .footer-brand {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--green);
+  margin-bottom: 10px;
+}
+.footer-tematico .footer-company {
+  font-size: 0.78rem;
+  color: var(--text-light);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.footer-tematico .footer-docs {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.footer-tematico .footer-contact {
+  font-size: 0.72rem;
+  color: var(--text-light);
+}
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container">
+    <div class="logo" style="color:var(--gold)">UniqTrip</div>
+    <h1 id="titulo">Costa do Descobrimento</h1>
+    <div class="subtitulo" id="subtitulo">Porto Seguro, Arraial d'Ajuda e Caraíva</div>
+    <div class="destinos-header" id="destinos-header"></div>
+    <div class="tags" id="perfil-tags"></div>
+  </div>
+</header>
+
+<div class="map-wrapper">
+  <div id="mapa"></div>
+</div>
+
+<section>
+  <div class="container">
+    <h2 class="section-title"><i class="fa-regular fa-map"></i> Distâncias</h2>
+    <div id="tabela-distancias"></div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title"><i class="fa-regular fa-calendar"></i> Roteiro</h2>
+    <div class="cards-grid" id="cards-container"></div>
+  </div>
+</section>
+
+<section id="sec-transportes">
+  <div class="container">
+    <h2 class="section-title"><i class="fa-solid fa-ship"></i> Transportes Especiais</h2>
+    <div class="transportes-grid" id="transportes-container"></div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title"><i class="fa-regular fa-calendar-clock"></i> Cronograma</h2>
+    <div id="cronograma-container"></div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title"><i class="fa-regular fa-coins"></i> Orçamento Estimado</h2>
+    <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:16px">Valores por pessoa, considerando quarto duplo</p>
+    <table class="tabela-orcamento">
+      <thead><tr><th>Item</th><th style="text-align:right">Custo</th></tr></thead>
+      <tbody id="orcamento-container"></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2 class="section-title"><i class="fa-regular fa-note-sticky"></i> Observações</h2>
+    <div class="obs-grid" id="obs-container"></div>
+  </div>
+</section>
+
+<footer class="footer-tematico">
+  <div class="container">
+    <div id="footer-temas"></div>
+    
+  </div>
+</footer>
+
+<button class="btn-print" onclick="window.print()">
+  <i class="fa-regular fa-file-pdf"></i> Salvar PDF
+</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============================================================
+// DADOS: Costa do Descobrimento
+// ============================================================
+const ROTEIRO = {
+  codigo: "2A",
+  nome: "Costa do Descobrimento",
+  subtitulo: "Porto Seguro, Arraial d'Ajuda e Caraíva",
+  perfil: {
+    ideal_para: ["casais", "famílias", "grupos de amigos"],
+    nivel: "Fácil",
+    melhor_epoca: [
+      { periodo: "Setembro a março", descricao: "praias com mar mais agradável e clima seco" },
+      { periodo: "Julho a outubro", descricao: "temporada de observação de baleias-jubarte" }
+    ]
+  },
+  origem: "Vitória da Conquista",
+  destinos: [
+    {
+      ordem: 1,
+      cidade: "Porto Seguro",
+      noites: 1,
+      dia: 1,
+      coord: [-16.445, -39.065],
+      foto: "",
+      atracoes: [
+        "Cidade Histórica (Cidade Alta)",
+        "Marco do Descobrimento",
+        "Igreja de Nossa Senhora da Pena",
+        "Farol",
+        "Passarela da Cultura",
+        "Orla Norte"
+      ],
+      melhores_praias: [
+        "Praia de Taperapuã",
+        "Praia do Mutá",
+        "Praia de Coroa Vermelha"
+      ],
+      passeios_opcionais: [],
+      gastronomia: [
+        "Moqueca baiana",
+        "Peixes grelhados",
+        "Barracas de praia tradicionais"
+      ],
+      por_do_sol: ["Orla da Cidade Histórica", "Passarela da Cultura"],
+      dicas: []
+    },
+    {
+      ordem: 2,
+      cidade: "Arraial d'Ajuda",
+      noites: 1,
+      dia: 2,
+      coord: [-16.490, -39.075],
+      foto: "",
+      atracoes: [
+        "Rua do Mucugê",
+        "Igreja Nossa Senhora d'Ajuda",
+        "Mirante das Fitas",
+        "Eco Parque"
+      ],
+      melhores_praias: [
+        "Praia da Pitinga (falésias coloridas)",
+        "Praia do Mucugê",
+        "Praia de Araçaípe",
+        "Praia do Parracho"
+      ],
+      passeios_opcionais: [
+        "Passeio de quadriciclo",
+        "Stand up paddle",
+        "Caiaque",
+        "Passeio de lancha",
+        "Visita a Trancoso"
+      ],
+      gastronomia: [
+        "Restaurantes charmosos na Rua do Mucugê",
+        "Cozinha internacional",
+        "Cafés especiais"
+      ],
+      por_do_sol: ["Praia do Mucugê", "Mirante das Fitas"],
+      dicas: ["Quem pretende conhecer Arraial e Trancoso no mesmo dia deve sair cedo para evitar filas na balsa"]
+    },
+    {
+      ordem: 3,
+      cidade: "Caraíva",
+      noites: 1,
+      dia: 3,
+      coord: [-16.830, -39.150],
+      foto: "",
+      atracoes: [
+        "Praia de Caraíva",
+        "Encontro do rio com o mar",
+        "Passeio de canoa pelo Rio Caraíva",
+        "Caminhada até a Praia do Satu",
+        "Vila de Caraíva"
+      ],
+      melhores_praias: [
+        "Praia de Caraíva",
+        "Praia do Satu"
+      ],
+      passeios_opcionais: [
+        "Trilha leve para Praia do Satu",
+        "Passeio de barco"
+      ],
+      gastronomia: [
+        "Frutos do mar",
+        "Restaurantes pé na areia",
+        "Música ao vivo durante a noite"
+      ],
+      por_do_sol: ["Encontro do Rio Caraíva com o mar"],
+      dicas: []
+    }
+  ],
+  distancias: [
+    { trecho: "Vitória da Conquista → Porto Seguro", distancia: "340 km", tempo: "5h30" },
+    { trecho: "Porto Seguro → Arraial d'Ajuda", distancia: "Balsa + 7 km", tempo: "20-40 min" },
+    { trecho: "Arraial d'Ajuda → Caraíva", distancia: "65 km", tempo: "1h40-2h" },
+    { trecho: "Caraíva → Porto Seguro", distancia: "100 km", tempo: "2h30" },
+    { trecho: "Porto Seguro → Vitória da Conquista", distancia: "340 km", tempo: "5h30" }
+  ],
+  transportes_especiais: [
+    {
+      nome: "Travessia para Arraial",
+      tipo: "Balsa",
+      icon: "fa-ship",
+      descricao: "Travessia sobre o Rio Buranhém",
+      duracao: "20-40 min",
+      detalhe: "Balsa sobre o Rio Buranhém - cerca de 10 min de travessia + embarque/desembarque",
+      dica: "Após a travessia, são apenas alguns minutos de carro até o centro de Arraial. Saia cedo em feriados e alta temporada."
+    },
+    {
+      nome: "Acesso a Caraíva",
+      tipo: "Canoa",
+      icon: "fa-sailboat",
+      descricao: "Travessia de canoa pelo Rio Caraíva",
+      duracao: "5 min",
+      detalhe: "Estacione em Nova Caraíva e faça a travessia final em uma pequena canoa.",
+      dica: "A vila não permite circulação de carros - todo deslocamento é feito a pé."
+    }
+  ],
+  observacoes: [
+    { icon: "fa-water", texto: "Entre julho e outubro, Porto Seguro é um dos principais pontos da Bahia para <strong>observação de baleias-jubarte</strong>." },
+    { icon: "fa-clock", texto: "Caso haja um quinto dia disponível, vale incluir <strong>Trancoso</strong> e o famoso Quadrado Histórico." }
+  ],
+
+  cronograma: [
+    {
+      dia: "Seg, 10/08",
+      cidade: "Porto Seguro",
+      eventos: [
+        { hora: "07:00", atividade: "Café da manhã, despedidas da senhora" },
+        { hora: "08:00", atividade: "Saída de carro VDC → Porto Seguro (340 km, 5h30)" },
+        { hora: "13:30", atividade: "Chegada Porto Seguro, check-in pousada" },
+        { hora: "14:00", atividade: "Almoço leve" },
+        { hora: "15:30", atividade: "Cidade Histórica: Marco do Descobrimento, Igreja da Pena, Farol" },
+        { hora: "18:00", atividade: "Pôr do sol na Passarela da Cultura" },
+        { hora: "20:00", atividade: "Jantar: moqueca baiana ou peixe grelhado" }
+      ]
+    },
+    {
+      dia: "Ter, 11/08",
+      cidade: "Arraial d'Ajuda",
+      eventos: [
+        { hora: "07:30", atividade: "Café da manhã" },
+        { hora: "08:30", atividade: "Balsa para Arraial (saia cedo para evitar fila)" },
+        { hora: "09:00", atividade: "Chegada Arraial, check-in pousada (base fixa 2 noites)" },
+        { hora: "10:00", atividade: "Rua do Mucugê: cafés, lojinhas" },
+        { hora: "12:30", atividade: "Almoço: Rabanete (quilo) ou Paulo Pescador (PF)" },
+        { hora: "14:30", atividade: "Praia do Mucugê ou Araçaípe (água calma)" },
+        { hora: "17:00", atividade: "Igreja N.S. d'Ajuda + Mirante das Fitas" },
+        { hora: "19:00", atividade: "Happy hour na Rua do Mucugê" },
+        { hora: "20:30", atividade: "Jantar: Varanda Mucugê ou Manguti" }
+      ]
+    },
+    {
+      dia: "Qua, 12/08",
+      cidade: "Trancoso (bate-volta de Arraial)",
+      eventos: [
+        { hora: "07:30", atividade: "Café da manhã na pousada" },
+        { hora: "08:30", atividade: "Saída de carro para Trancoso (40 min, 30 km)" },
+        { hora: "09:15", atividade: "Chegada Trancoso - Quadrado Histórico" },
+        { hora: "09:30", atividade: "Igreja São João Batista, lojas, casas coloridas" },
+        { hora: "11:00", atividade: "Praia do Quadrado (5 min do Quadrado)" },
+        { hora: "12:30", atividade: "Almoço: Capim Santo ou restaurante do Quadrado" },
+        { hora: "14:30", atividade: "Praia do Quadrado (mar calmo, cadeiras)" },
+        { hora: "16:30", atividade: "Volta para Arraial" },
+        { hora: "17:30", atividade: "Chegada Arraial, descanso" },
+        { hora: "19:00", atividade: "Jantar: Xaxá Grill ou Egadi (italiano)" },
+        { hora: "21:00", atividade: "Noite na Rua do Mucugê" }
+      ]
+    },
+    {
+      dia: "Qui, 13/08",
+      cidade: "Caraíva",
+      eventos: [
+        { hora: "08:00", atividade: "Café + check-out da pousada em Arraial" },
+        { hora: "08:30", atividade: "Saída para Caraíva (65 km, 1h40)" },
+        { hora: "10:10", atividade: "Chegada Nova Caraíva, estacionar carro (R$ 30/dia)" },
+        { hora: "10:30", atividade: "Travessia de canoa pelo Rio Caraíva (~5 min)" },
+        { hora: "10:45", atividade: "Check-in pousada na vila" },
+        { hora: "14:00", atividade: "Praia de Caraíva" },
+        { hora: "16:00", atividade: "Passeio de canoa pelo rio" },
+        { hora: "18:00", atividade: "Pôr do sol no encontro rio-mar" },
+        { hora: "20:00", atividade: "Jantar pé na areia, música ao vivo" }
+      ]
+    },
+    {
+      dia: "Sex, 14/08",
+      cidade: "Volta para casa",
+      eventos: [
+        { hora: "07:00", atividade: "Último café em Caraíva, travessia de volta" },
+        { hora: "08:00", atividade: "Saída de carro Caraíva → VDC (4h30)" },
+        { hora: "12:30", atividade: "Chegada VDC, almoço com a senhora" },
+        { hora: "15:00", atividade: "Descanso, organizar malas" },
+        { hora: "18:00", atividade: "Saída para o aeroporto" },
+        { hora: "19:00", atividade: "Check-in aeroporto" },
+        { hora: "20:15", atividade: "Voo VDC → GRU" },
+        { hora: "22:15", atividade: "Chegada São Paulo" }
+      ]
+    }
+  ],
+  orcamento: [
+    { item: "Hospedagem Porto Seguro (1 noite)", valor_por_pessoa: "R$ 100-125" },
+    { item: "Hospedagem Arraial d'Ajuda (2 noites)", valor_por_pessoa: "R$ 250-350" },
+    { item: "Hospedagem Caraíva (1 noite)", valor_por_pessoa: "R$ 150-225" },
+    { item: "Alimentação (5 dias no litoral)", valor_por_pessoa: "R$ 400-600" },
+    { item: "Combustível + pedágio (VDC ↔ litoral)", valor_por_pessoa: "R$ 200-250" },
+    { item: "Balsa Arraial", valor_por_pessoa: "R$ 6-12" },
+    { item: "Estacionamento Caraíva", valor_por_pessoa: "R$ 30" },
+    { item: "Travessia canoa Caraíva", valor_por_pessoa: "R$ 20-30" },
+    { item: "Passeio canoa Rio Caraíva", valor_por_pessoa: "R$ 30-50" }
+  ],
+  origem_coord: [-14.866, -40.839],
+  temas: [
+    { icon: "fa-landmark", label: "História", destaque: "Cidade Histórica de Porto Seguro, Marco do Descobrimento, Igreja N.S. da Pena e o Quadrado Histórico de Trancoso - cada parada é uma página do Brasil." },
+    { icon: "fa-umbrella-beach", label: "Praias", destaque: "De Taperapuã a Caraíva, passando por Pitinga (falésias coloridas) e Mucugê - um litoral diferente a cada dia." },
+    { icon: "fa-utensils", label: "Gastronomia", destaque: "Moqueca baiana, frutos do mar, restaurantes charmosos na Rua do Mucugê e jantar pé na areia em Caraíva." },
+    { icon: "fa-sun", label: "Pôr do Sol", destaque: "Passarela da Cultura em Porto Seguro, Mirante das Fitas em Arraial e o encontro do rio com o mar em Caraíva." },
+    { icon: "fa-leaf", label: "Natureza", destaque: "Passeio de canoa pelo Rio Caraíva, trilha leve até a Praia do Satu, observação de baleias-jubarte e falésias de Pitinga." },
+    { icon: "fa-palette", label: "Cultura", destaque: "Passarela da Cultura, Mirante das Fitas, artesanato e lojinhas no Quadrado de Trancoso e na Rua do Mucugê." }
+  ]
+};
+
+// ============================================================
+// RENDERIZAÇÃO
+// ============================================================
+
+function renderHeader(d) {
+  document.getElementById('titulo').textContent = d.nome;
+  document.getElementById('subtitulo').textContent = d.subtitulo;
+
+  // Destinos header
+  const dh = document.getElementById('destinos-header');
+  const nomes = d.destinos.map(dd => dd.cidade);
+  let html = `<i class="fa-solid fa-location-dot" style="color:var(--gold);font-size:0.75rem"></i> ${d.origem} `;
+  nomes.forEach((nome, i) => {
+    html += `<span class="seta"><i class="fa-solid fa-chevron-right"></i></span> ${nome}`;
+  });
+  html += ` <span class="seta"><i class="fa-solid fa-chevron-right"></i></span> ${d.origem} `;
+  dh.innerHTML = html;
+
+  // Tags
+  const tags = document.getElementById('perfil-tags');
+  tags.innerHTML = '';
+  const idealHtml = d.perfil.ideal_para.map(p => `<span class="tag"><i class="fa-regular fa-user"></i>${p}</span>`).join('');
+  const nivelHtml = `<span class="tag"><i class="fa-solid fa-signal"></i>Nível: <span class="badge">${d.perfil.nivel}</span></span>`;
+  tags.innerHTML = idealHtml + nivelHtml;
+}
+
+function renderDistancias(d) {
+  const el = document.getElementById('tabela-distancias');
+  let rows = d.distancias.map(t =>
+    `<tr><td>${t.trecho}</td><td>${t.distancia}</td><td>${t.tempo}</td></tr>`
+  ).join('');
+
+  // Calcular total
+  let totalHoras = 0, totalMin = 0;
+  d.distancias.forEach(t => {
+    const p = t.tempo.match(/(\d+)h(?:\s*(\d+))?/);
+    if (p) {
+      totalHoras += parseInt(p[1]);
+      if (p[2]) totalMin += parseInt(p[2]);
+    }
+  });
+  totalHoras += Math.floor(totalMin / 60);
+  totalMin = totalMin % 60;
+  const totalTempo = totalHoras + 'h' + (totalMin > 0 ? totalMin + 'min' : '');
+
+  el.innerHTML = `
+    <table class="tabela-distancias">
+      <thead><tr><th>Trecho</th><th>Distância</th><th>Tempo médio</th></tr></thead>
+      <tbody>${rows}
+        <tr class="total-row"><td><strong>Tempo total estimado</strong></td><td></td><td><strong>${totalTempo}</strong></td></tr>
+      </tbody>
+    </table>
+  `;
+}
+
+function renderCards(d) {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = '';
+  d.destinos.forEach((dest, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    // Icone transporte baseado no idx
+    const idxDist = idx + 1;
+    const dist = d.distancias[idxDist] || d.distancias[0];
+    const isBalsa = dist.distancia.indexOf('Balsa') >= 0 || dist.distancia.indexOf('balsa') >= 0;
+    const isCanoa = dist.distancia.indexOf('Canoa') >= 0 || dist.distancia.indexOf('canoa') >= 0;
+    const icon = isBalsa ? 'fa-ship' : isCanoa ? 'fa-sailboat' : 'fa-car';
+    const labelProximo = idx < d.destinos.length - 1
+      ? d.destinos[idx + 1].cidade
+      : d.origem;
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-numero">${dest.ordem}</div>
+        <div class="card-cidade">
+          <h3>${dest.cidade}
+            ${dest.cidade === "Arraial d'Ajuda" ? '<span class="badge-base">BASE</span>' : ''}
+          </h3>
+          <div class="noites">
+            <i class="${dest.cidade === "Arraial d'Ajuda" ? 'fa-solid fa-house' : 'fa-regular fa-moon'}"></i>
+            ${dest.noites} noite${dest.noites > 1 ? 's' : ''} · Dia ${dest.dia}
+            ${dest.cidade === "Arraial d'Ajuda" ? '<span class="base-fixa">Base fixa - mesma pousada</span>' : ''}
+          </div>
+          <div class="card-highlights">
+            ${dest.atracoes.slice(0,3).map(function(a) { return '<span><i class="fa-solid fa-star" style="color:var(--gold);font-size:0.55rem"></i> ' + a + '</span>'; }).join('')}
+          </div>
+        </div>
+        <div class="card-transporte">
+          <div class="transporte-icon">
+            <i class="fa-solid ${icon}"></i> ${dist.tempo || ''}
+          </div>
+          <div class="destino-label">→ ${labelProximo}</div>
+        </div>
+        <div class="card-expand">
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="grid-detalhes">
+          ${dest.atracoes && dest.atracoes.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-regular fa-star"></i> Atrações</h4>
+            <ul>${dest.atracoes.map(a => `<li>${a}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${dest.melhores_praias && dest.melhores_praias.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-solid fa-umbrella-beach"></i> Melhores Praias</h4>
+            <ul>${dest.melhores_praias.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${dest.gastronomia && dest.gastronomia.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-solid fa-utensils"></i> Gastronomia</h4>
+            <ul>${dest.gastronomia.map(g => `<li>${g}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${dest.passeios_opcionais && dest.passeios_opcionais.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-regular fa-compass"></i> Passeios Opcionais</h4>
+            <ul>${dest.passeios_opcionais.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${dest.por_do_sol && dest.por_do_sol.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-solid fa-sun"></i> Pôr do Sol</h4>
+            <ul>${dest.por_do_sol.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>` : ''}
+          ${dest.dicas && dest.dicas.length ? `
+          <div class="detalhe-item">
+            <h4><i class="fa-regular fa-lightbulb"></i> Dicas</h4>
+            <ul>${dest.dicas.map(d => `<li>${d}</li>`).join('')}</ul>
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Toggle card expand
+document.addEventListener('click', function(e) {
+  const header = e.target.closest('.card-header');
+  if (!header) return;
+  const card = header.closest('.card');
+  const body = card.querySelector('.card-body');
+  body.classList.toggle('open');
+});
+
+
+
+function renderCronograma(d) {
+  const el = document.getElementById('cronograma-container');
+  if (!d.cronograma || !d.cronograma.length) { el.parentElement.style.display = 'none'; return; }
+  el.innerHTML = d.cronograma.map(dia => `
+    <div class="cronograma-dia">
+      <div class="cronograma-header">
+        <span class="cronograma-dia-label">${dia.dia}</span>
+        <span class="cronograma-cidade"><i class="fa-solid fa-location-dot" style="color:var(--gold)"></i> ${dia.cidade}</span>
+      </div>
+      <div class="cronograma-body">
+        ${dia.eventos.map(e => `
+          <div class="cronograma-row">
+            <span class="cronograma-hora">${e.hora}</span>
+            <span class="cronograma-atividade">${e.atividade}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderOrcamento(d) {
+  const el = document.getElementById('orcamento-container');
+  if (!d.orcamento || !d.orcamento.length) { el.parentElement.style.display = 'none'; return; }
+  el.innerHTML = d.orcamento.map(o => `
+    <tr>
+      <td>${o.item}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${o.valor_por_pessoa}</td>
+    </tr>
+  `).join('');
+}
+function renderTransportes(d) {
+  const el = document.getElementById('transportes-container');
+  if (!d.transportes_especiais || !d.transportes_especiais.length) {
+    el.parentElement.style.display = 'none';
+    return;
+  }
+  const icons = { 'fa-ship': 'fa-ship', 'fa-sailboat': 'fa-sailboat' };
+  el.innerHTML = d.transportes_especiais.map(t => `
+    <div class="transporte-card">
+      <div class="icon-wrap"><i class="fa-solid ${t.icon || 'fa-ship'}"></i></div>
+      <div>
+        <h4>${t.nome}</h4>
+        <p><strong>${t.tipo}:</strong> ${t.detalhe}</p>
+        <p style="margin-top:4px"><i class="fa-regular fa-clock" style="color:var(--gold)"></i> ${t.duracao}</p>
+        ${t.dica ? `<div class="dica"><i class="fa-regular fa-lightbulb" style="color:var(--gold);margin-right:6px"></i>${t.dica}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderObservacoes(d) {
+  const el = document.getElementById('obs-container');
+  if (!d.observacoes || !d.observacoes.length) {
+    el.parentElement.style.display = 'none';
+    return;
+  }
+  el.innerHTML = d.observacoes.map(o => `
+    <div class="obs-item">
+      <i class="fa-solid ${o.icon}"></i>
+      <p>${o.texto}</p>
+    </div>
+  `).join('');
+}
+
+function renderFooter(d) {
+  const el = document.getElementById('footer-temas');
+  el.innerHTML = `
+    <div class="footer-brand">UniqTrip · ${d.nome}</div>
+    <div class="footer-company">UNIQTRIP AGENCIA DE VIAGENS E OPERADORA DE TURISMO LTDA</div>
+    <div class="footer-docs">CNPJ: 19.013.943/0001-87 | CADASTUR: 19.013.943/0001-87</div>
+    <div class="footer-contact">contato@uniqtrip.com.br | +55 12 99703-5143</div>
+  `;
+}
+// MAPA LEaFLET
+// ============================================================
+
+function initMap(d) {
+  const map = L.map('mapa', {
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  const bounds = [];
+  const markers = [];
+
+  // Marcador de origem (Vitória da Conquista)
+  const vdcIcon = L.divIcon({
+    className: 'marker-number',
+    html: '<div class="marker-circle marker-origem"><i class="fa-solid fa-house" style="font-size:0.85rem"></i></div>',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  });
+
+  const vdcMarker = L.marker(d.origem_coord, { icon: vdcIcon })
+    .addTo(map)
+    .bindPopup(`
+      <strong style="font-family:Cinzel;color:#0B3B24">${d.origem}</strong><br>
+      <span style="font-size:0.8rem;color:#999">Partida e retorno</span>
+    `, { closeButton: true, maxWidth: 200 });
+
+  bounds.push(d.origem_coord);
+  markers.push(vdcMarker);
+
+  // Linha de ida: VDC → 1º destino
+  L.polyline([d.origem_coord, d.destinos[0].coord], {
+    color: '#C5A059',
+    weight: 3,
+    opacity: 0.8
+  }).addTo(map);
+
+  d.destinos.forEach((dest, idx) => {
+    bounds.push(dest.coord);
+
+    const isEnd = idx === d.destinos.length - 1;
+    const icon = L.divIcon({
+      className: 'marker-number',
+      html: `<div class="marker-circle${isEnd ? ' end' : ''}">${dest.ordem}</div>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+
+    const marker = L.marker(dest.coord, { icon })
+      .addTo(map)
+      .bindPopup(`
+        <strong style="font-family:Cinzel;color:#0B3B24">${dest.cidade}</strong><br>
+        <span style="font-size:0.85rem;color:#666">
+          <i class="fa-regular fa-moon" style="color:#C5A059"></i> ${dest.noites} noite${dest.noites > 1 ? 's' : ''} · Dia ${dest.dia}
+        </span>
+        <br><span style="font-size:0.8rem;color:#999">${d.nome}</span>
+      `, { closeButton: true, maxWidth: 220 });
+
+    markers.push(marker);
+
+    // Linha entre destinos
+    if (idx > 0) {
+      const prev = d.destinos[idx - 1].coord;
+      L.polyline([prev, dest.coord], {
+        color: '#C5A059',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: idx === 1 ? null : '8, 6'
+      }).addTo(map);
+    }
+  });
+
+  // Linha de volta: último destino → VDC
+  const ultimo = d.destinos[d.destinos.length - 1].coord;
+  L.polyline([ultimo, d.origem_coord], {
+    color: '#C5A059',
+    weight: 2,
+    opacity: 0.4,
+    dashArray: '6, 8'
+  }).addTo(map);
+
+  // Ajustar zoom para incluir todos os pontos (inclusive VDC)
+  const group = L.featureGroup(markers);
+  map.fitBounds(group.getBounds().pad(0.25));
+
+  // Forçar resize após render
+  setTimeout(() => map.invalidateSize(), 300);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+renderHeader(ROTEIRO);
+renderDistancias(ROTEIRO);
+renderCards(ROTEIRO);
+renderTransportes(ROTEIRO);
+renderCronograma(ROTEIRO);
+renderOrcamento(ROTEIRO);
+renderObservacoes(ROTEIRO);
+renderFooter(ROTEIRO);
+
+// Abrir primeiro card por padrão + init map
+window.addEventListener('load', function() {
+  const firstBody = document.querySelector('.card .card-body');
+  if (firstBody) firstBody.classList.add('open');
+  // Init map after container has dimensions
+  setTimeout(function() {
+    initMap(ROTEIRO);
+  }, 200);
+});
+</script>
+</body>
+</html>
+
+
+
+
+
