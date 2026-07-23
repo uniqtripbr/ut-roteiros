@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 :root {
@@ -741,6 +742,7 @@ section { padding: 40px 0; }
 </button>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
 // ============================================================
 // DADOS: Costa do Descobrimento
@@ -1240,12 +1242,36 @@ function initMap(d) {
   bounds.push(d.origem_coord);
   markers.push(vdcMarker);
 
-  // Linha de ida: VDC → 1º destino
-  L.polyline([d.origem_coord, d.destinos[0].coord], {
+  // Helper para criar rota real com fallback para linha reta
+  function createRoute(from, to, lineOpts) {
+    const ctrl = L.Routing.control({
+      waypoints: [L.latLng(from), L.latLng(to)],
+      router: new L.Routing.osrmv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1',
+        timeout: 8000
+      }),
+      lineOptions: { styles: [lineOpts] },
+      show: false,
+      addWaypoints: false,
+      draggableWaypoints: false,
+      routeWhileDragging: false,
+      fitSelectedRoutes: false,
+      showAlternatives: false,
+      createMarker: function() { return false; }
+    }).addTo(map);
+
+    // Fallback: se OSRM falhar, desenha linha reta
+    ctrl.on('routingerror', function() {
+      L.polyline([from, to], lineOpts).addTo(map);
+    });
+  }
+
+  // Rota 1: VDC → 1º destino
+  createRoute(d.origem_coord, d.destinos[0].coord, {
     color: '#C5A059',
     weight: 3,
     opacity: 0.8
-  }).addTo(map);
+  });
 
   d.destinos.forEach((dest, idx) => {
     bounds.push(dest.coord);
@@ -1270,26 +1296,26 @@ function initMap(d) {
 
     markers.push(marker);
 
-    // Linha entre destinos
+    // Rota entre destinos consecutivos
     if (idx > 0) {
       const prev = d.destinos[idx - 1].coord;
-      L.polyline([prev, dest.coord], {
+      createRoute(prev, dest.coord, {
         color: '#C5A059',
         weight: 3,
         opacity: 0.8,
         dashArray: idx === 1 ? null : '8, 6'
-      }).addTo(map);
+      });
     }
   });
 
-  // Linha de volta: último destino → VDC
+  // Rota de volta: último destino → VDC
   const ultimo = d.destinos[d.destinos.length - 1].coord;
-  L.polyline([ultimo, d.origem_coord], {
+  createRoute(ultimo, d.origem_coord, {
     color: '#C5A059',
     weight: 2,
     opacity: 0.4,
     dashArray: '6, 8'
-  }).addTo(map);
+  });
 
   // Ajustar zoom para incluir todos os pontos (inclusive VDC)
   const group = L.featureGroup(markers);
